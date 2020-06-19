@@ -1,0 +1,178 @@
+---
+title: "DSC 520 Week 7 Multiple Regression Assignment"
+author: "Dan Wiltse"
+date: "Jan 26th 2020"
+output:
+  word_document: default
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library("ggm")
+library("ggplot2")
+library("readxl")
+library("car")
+library("sqldf")
+library("boot")
+library("QuantPsyc")
+
+
+# Get housing data from local file and load into a R data frame
+housing7 <- read_excel("week-7-housing.xlsx")
+```
+
+
+## Research Question
+Data for this assignment is focused on real estate transactions recorded from 1964 to 2016. Using your skills in statistical correlation, multiple regression and R programming, you are interested in the following variables:  Sale Price and several other possible predictors.
+
+
+## b. Create two variables; one that will contain the variables Sale Price and Square Foot of Lot (same variables used from previous assignment on simple regression) and one that will contain Sale Price, Bedrooms, and Bath Full Count as predictors.  
+
+```{r}
+#Linear Regression
+saleprice_lr <- lm(sale_price~sq_ft_lot, data = housing7)
+#Multiple Regression
+saleprice_mr <- lm(sale_price~sq_ft_lot+bedrooms+bath_full_count, data = housing7)
+
+saleprice_lr
+saleprice_mr
+
+```
+
+
+## c. Execute a summary() function on two variables defined in the previous step to compare the model results. What are the R2 and Adjusted R2 statistics?  Explain what these results tell you about the overall model. Did the inclusion of the additional predictors help explain any large variations found in Sale Price?
+
+For the first variable created (saleprice_lr) that compared sales price to sq ft of lot, the R value is .119 and the R2 is .014. This means that the simple regression model including only square foot of the lot accounts for only 1.4% of the variation in sales price.
+
+For the 2nd variable created that had multiple variables (saleprice_mr), the R value is .336 and the R2 value is .113. This means that the multiple regression accounts for 11.3% of the variation in sales prices, so including additional predictors helped explain nearly 10% more of the variance in predicting sales price.
+
+
+```{r}
+options(scipen = 999)
+summary(saleprice_lr)
+summary(saleprice_mr)
+```
+
+
+## d. Considering the parameters of the multiple regression model you have created. What are the standardized betas for each parameter and what do the values indicate?
+
+1) Sq_ft_lot has a beta of .101, which means that as sq ft of the lot increases by 1 SD , sale price increases by .101 standard deviations.  This is only true if the effects of bedrooms and full bathrooms are held constant.
+
+2) Bedrooms has a standardized beta of .1492, which means as the number of bedrooms increases by 1 SD, sale price will increase by .149 standard deviations. This is only true if the effects of sq ft of the lot and full bathrooms are held constant.
+
+3) Bath full count has a standardized beta of .235, so this means as the number of full bathrooms increases by 1 SD, sale price will increase by .235 standard deviations. This is only true if the effects of bedrooms and sq ft of the lot are held constant.
+
+```{r}
+lm.beta(saleprice_mr)
+```
+
+
+## e. Calculate the confidence intervals for the parameters in your model and explain what the results indicate.
+
+See results below.  The results of the confidence interval show how close the model comes to predicting the true value for each beta.  The closer the intervals are together the better the predictor.  Looking at the 3 variables, none of them cross zero (eg where some of the predictors have a negative relationship that cross over the confidence intervals), so this indicates these variables are representative of the true values for each b value.
+
+
+```{r}
+confint(saleprice_mr)
+```
+
+
+## f. Assess the improvement of the new model compared to your original model (simple regression model) by testing whether this change is significant by performing an analysis of variance.
+
+The ANOVA shows an improvement significant at the .001 level.
+
+```{r}
+anova(saleprice_mr, saleprice_lr)
+```
+
+
+
+## g. Perform casewise diagnostics to identify outliers and/or influential cases, storing each functions output in a dataframe assigned to a unique variable name.
+
+See #i
+
+## h. Calculate the standardized residuals using the appropriate command, specifying those that are +-2, storing the results of large residuals in a variable you create.
+
+See #i
+
+## i. Use the appropriate function to show the sum of large residuals.
+
+```{r}
+#Create outlier residual variables
+housing7$residuals <- resid(saleprice_mr)
+housing7$standardized.residuals <- rstandard(saleprice_mr)
+#Create influential cases variables used in j:
+housing7$cooks.distance <- cooks.distance(saleprice_mr)
+housing7$leverage <- hatvalues(saleprice_mr)
+housing7$covariance.ratios <- covratio(saleprice_mr)
+#Create variable that finds standardized residuals smaller than -2 and bigger than 2
+housing7$large_residual <- housing7$standardized.residuals > 2 | housing7$standardized.residuals < -2
+#Find number of records with large residuals
+sum(housing7$large_residual)
+```
+
+
+## j. Which specific variables have large residuals (only cases that evaluate as TRUE)?
+
+See below for all variables(columns) that have large residuals.
+
+```{r}
+housing7[housing7$large_residual, c("sale_price", "sq_ft_lot", "bedrooms", "bath_full_count", "standardized.residuals")]
+```
+
+## k. Investigate further by calculating the leverage, cooks distance, and covariance ratios. Comment on all cases that are problematics.
+
+According to the book, we should further examine columns with a Cooks distance greater than 1, so row 7 below has a Cook's distance of 2.38, so should definitely be reviewed.  
+
+We should also be on the lookout for any records with a leverage (hat value) 2-3 times larger than the average leverage.  And for covariance ratios, will need to look at cases that deviate the expected range of these ratios in the data to see if these are influencing the overall results.
+
+
+```{r}
+housing7[housing7$large_residual, c("cooks.distance","leverage", "covariance.ratios")]
+```
+## l. Perform the necessary calculations to assess the assumption of independence and state if the condition is met or not.
+
+The dw statistic is .702, so this does raise alarm bells, as we typically would like this value between 1 and 3, and the author stated the closer this is to 2, the better. The p value is 0, so it shows that this conclusion is significant.
+
+```{r}
+library(boot)
+dwt(saleprice_mr)
+```
+
+## m. Perform the necessary calculations to assess the assumption of no multicollinearity and state if the condition is met or not.
+
+The largest VIF is less than 10 and the tolerance statistics are all well above 0.2, so these results conclude there is no collinearity within the data.
+
+
+```{r}
+mean(vif(saleprice_mr))
+vif(saleprice_mr)
+1/vif(saleprice_mr)
+```
+
+## n. Visually check the assumptions related to the residuals using the plot() and hist() functions. Summarize what each graph is informing you of and if any anomalies are present.
+
+The plot function creates 4 plots. The first plots the residuals versus fitted values.  This shows a random pattern of plots, which indicates that assumtions of linearity, randomness and homoscedacity have been met.
+
+The second plot is the Q-Q plot, which shows deivations from normality.  If the data was perfectally distributed, the data would all appear on the dotted line, but since you can see the line deviate on the right side of the plot, which indicates a deviation from normality.
+
+The third plot and forth plots also show the scale location and residuals vs leverage.
+
+Using the hist() function with the residuals, the distribution is roughly normal and not skewed in any particular direction.
+
+```{r}
+plot(saleprice_mr)
+hist(rstudent(saleprice_mr))
+```
+
+
+
+## o. Overall, is this regression model unbiased?  If an unbiased regression model, what does this tell us about the sample vs. the entire population model?
+
+Besides the questionable value of the Durbin Watson Test that assesses the assumption of independence, I believe this regression model is unbiased, as the above tests show there are no significant issues with the model or data impacting the results.  
+
+So we can likely safely assume as an unbiased regression model,  this regresion model would generalize towards any house in the area to predict the sale price.
+
