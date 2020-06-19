@@ -1,0 +1,80 @@
+ scores <- read_csv("C:/Users/Dan/Desktop/DSC 520/scores.csv")
+Parsed with column specification:
+cols(
+  Count = col_double(),
+  Score = col_double(),
+  Section = col_character()
+)
+
+sport <- subset(scores, Section=="Sports")
+reg <- subset(scores, Section=="Regular")
+
+print(sport)
+print(reg)
+
+
+library(plyr)
+ggplot(data=scores)+ 
+  geom_line(aes(Score,group=Section, colour=Section),
+                ,subset = .(Section %in% c("Sports" , "Regular")))
+
+
+ scores <- read_csv("C:/Users/Dan/Desktop/DSC 520/scores.csv")
+Parsed with column specification:
+cols(
+  Count = col_double(),
+  Score = col_double(),
+  Section = col_character()
+)
+
+sport <- subset(scores, Section=="Sports")
+reg <- subset(scores, Section=="Regular")
+
+library(ggplot2)
+ggplot(subset(scores, Section %in% c("Sports" , "Regular"))) + 
+         geom_line(aes(Score, group=Section, colour=Section))
+
+scores <- read_csv("C:/Users/Dan/Desktop/DSC 520/scores.csv")
+Parsed with column specification:
+cols(
+  Count = col_double(),
+  Score = col_double(),
+  Section = col_character()
+)
+
+ggplot(subset(scores, Section %in% c("Sports", "Regular")), aes(x = Score, y = Count))+
+  geom_col(aes(fill = Section), width = 0.7) +
+  scale_fill_viridis_d()
+
+scores <- read_csv("C:/Users/Dan/Desktop/DSC 520/scores.csv")
+Parsed with column specification:
+cols(
+  Count = col_double(),
+  Score = col_double(),
+  Section = col_character()
+)
+ggplot(data=scores, aes(x=as.factor(Score), y=Count, group=Section, color=Section)) + geom_line() + xlab("Score") + ylab("Section ()") + theme_bw() + scale_color_manual(values=c("red", "blue"))
+
+
+scores <- read_csv("C:/Users/Dan/Desktop/DSC 520/scores.csv")
+Parsed with column specification:
+cols(
+  Count = col_double(),
+  Score = col_double(),
+  Section = col_character()
+)
+
+scatter <- ggplot(scores, aes(Count, Score, colour = Section))
+scatter + geom_point()
+
+
+
+
+library(ggplot2)
+ggplot(scores, aes(FR.CoYear, Young/Sample, group=Species, colour=Species)) + 
+  geom_point() + geom_line()
+
+
+
+ggplot(scores, aes(x=Score, y=Count)) + geom_bar(stat="identity")
+
