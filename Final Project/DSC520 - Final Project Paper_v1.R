@@ -1,0 +1,203 @@
+---
+title: "DSC 520 Week Final Project"
+author: "Dan Wiltse"
+date: "February 27th 2020"
+output:
+  word_document: default
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library ("pastecs")
+library("car")
+library("ggplot2")
+library("QuantPsyc")
+library("caTools")
+library("mtcars")
+library("readxl")  #package for loading Excel file
+library("jtools")
+library("crunch")
+library("dplyr")
+# Turn off Scientific Notation
+options(scipen = 999)
+
+
+# Get all 2019 NCAA Football records from local file and load into a R data frame
+recruiting2019 <- read_excel("recruiting2019combined.xlsx")
+# Get all 2019 NCAA Football records from local file and load into a R data frame
+game2019 <- read_excel("gameinfo2019.xlsx")
+```
+
+
+## Introduction
+
+College football is a game enjoyed by millions of fans across the country in the fall.  Part of the uniqueness of college football, unlike the pros, is that each player
+decides where they want to go to school, so the recruiting process plays a big part in how the teams perform on the field each week.  The better players you can recruit
+to your school, the more likely you are to have a winning team during the season.  Players can redshirt in college, so they have a chance to develop over five years, so
+you have to look at the recruiting across that time period to see if the players you brought in over that time worked together on the field to acheive success.
+
+## Problem Statement
+
+I want to understand how much recruiting impacts on-field performance in college football, based on recruiting ranking and points, to quantify the impact it has on differences
+between winning and losing.
+
+## How I addressed problem statement
+
+###Data
+
+The data used on this project came from a collge football API for R that utilized the resources below.  The analysis used the following metrics, defined below:
+ 
+  Season Data 
+  1) Team - College football teams from the five major football conferences (ACC, Big Ten, Big 12, Pac 12, and SEC)
+  2) Wins - Total Wins by the team during the 2019 season.
+  3) Five Year Average Recruiting Points - Average recruiting points (as determined by year by collegefootlldata.com) across last 5 recruiting classes (2015-2019)
+
+  Game Data
+  1) Home Team - Team hosting the game (or determined home team on neutral site)
+  2) Home Team Score - Final score of game by home team
+  3) Away Team - Visit team of game
+  4) Away Team Score - Final score of game by visiting team
+  5) Home Team Five Year Average Recruiting Points - Average recruiting points for the home team (as determined by year by collegefootlldata.com) across last 5 recruiting classes (2015-2019)
+  6) Away Team Five Year Average Recruiting Points - Average recruiting points for the away team (as determined by year by collegefootlldata.com) across last 5 recruiting classes (2015-2019)
+  7) Recruiting Point Difference - Home Team Five Year Average Points - Away Team Five Year Average Points
+  8) Home Team Win - flag on whether or not the home team won the game
+
+
+Resources:
+  1) https://github.com/meysubb/cfbscrapR
+  2) https://collegefootballdata.com/
+
+###Methodolgy
+
+I addressed the problem statement in two ways:
+  
+1) First, I looked at the season win-loss totals for the 2019 season for the major college football conferences, and analyzed how
+how much impact recruiting has by using a five year average recruiting points, using linear regression.
+
+2) In addition, I wanted to see if I could  predict the game by game performance based on recruiting ranking comparisons as well. To accomplish this, I used logistic regression
+to see how accurate the model would be in picking the winner of games during the 2019 season based on which teams had higher recruiting rankings. 
+
+## Analysis
+### Summarize the interesting insights that your analysis provided
+
+There were several interesting findings in my analysis.  Using linear regression, there was a significant relationship between recruiting points and on-field performance (p < 0.0001).
+It also showed that overall, average recruiting points accounted for 28% of the variance in wins. Breaking out the regression results by conferences, there were also big differences
+between conferences as well. In the SEC, 56% of the variance could be explained by recruiting, where as in the Pac 12, only 2% of the variance was explained.
+
+In my analysis using logistic regression, it was able to accurately predict the outcome of 67% percent of the games in the validation data set.  This was suprising to me as it was only using one variable
+to predict the outcome of the game
+
+# Implications
+### Summarize the implications to the consumer (target audience) of your analysis
+
+The analysis shows just how important recruiting is to the performance of teams on the field in college football throughout the season.  Across the major conferences in college football, recruiting accounts to almost 
+1/3 of the variance in winning, not accounting for coaching or development of the talent they recruited.  It also seems to be a bigger impact in certain conferences, especially
+the Southeastern Conference.
+
+The other implication is that you can predict the outcome of games based on discrepancies in five year recruiting performance almost 2/3rd of the time, showing just how 
+big an impact recruiting has on week to week performance as well.
+
+
+
+## Limitations
+
+The limitations of my analysis is that I just looked at the average recruiting performance overall, I didnt break it out by position to see if there were certain positions that were
+were important than others, like quarterbacks versus kickers. I also did not account for attrition in the analysis, so if highly recruited players left the school, they would
+still factor into the recruiting rankings  but not the on-field performance, skewing the results.  I also looked at only the current season of data, it would be helpful to 
+build a more meaningful trend by using several seasons worth of data to train my model to see if the results are consistent over time.
+
+## Concluding Remarks
+
+Overall, my analysis discovered a strong relationship between off field performance (recruiting) and on-field performance (wins).  It would be worthwhile to expand the analysis to see the deeper impact recruiting has on how the teams perform on the field.
+
+
+## Appendix 
+## R script
+
+# Season Analysis
+# Breaking out data by conference for later analysis
+
+
+```{r}
+# Filter to each conference separately for regression
+SEC <- majorconf2019[majorconf2019$conference == "SEC",]
+
+# Filter to each conference separately for regression
+Big12 <- majorconf2019[majorconf2019$conference == "Big 12",]
+
+# Filter to each conference separately for regression
+BigTen <- majorconf2019[majorconf2019$conference == "Big Ten",]
+
+# Filter to each conference separately for regression
+ACC <- majorconf2019[majorconf2019$conference == "ACC",]
+
+
+# Filter to each conference separately for regression
+Pac12 <- majorconf2019[majorconf2019$conference == "Pac 12",]
+
+## Correlation Analysis of wins and recruiting
+
+cor.test(majorconf2019$wins, majorconf2019$five_year_avg_points)
+```
+
+## Data Validation
+
+Data was already clean before analysis, the histograms show that the data is normally distributed and does not violate assumptions necessary for linear regression.
+
+```{r}
+# adding a normal distribution line in histogram for wins
+hist(majorconf2019$wins, freq=FALSE, col="gray", xlab="Wins", main=" Wins Histogram", las=1)
+curve(dnorm(x, mean=mean(majorconf2019$wins), sd=sd(majorconf2019$wins)), add=TRUE, col="red") #line
+
+
+# adding a normal distribution line in histogram for recruiting points
+hist(majorconf2019$five_year_avg_points, freq=FALSE, col="gray", xlab="Avg Recruiting Points", main=" Recruiting Histogram", las=1)
+curve(dnorm(x, mean=mean(majorconf2019$five_year_avg_points), sd=sd(majorconf2019$five_year_avg_points)), add=TRUE, col="red") #line
+```
+
+## Analysis
+
+Scatterplot with linear regression line. Shows a linear relationship between wins and points, especially in the SEC
+
+
+#Output a scatterplot by conference 
+```{r}
+ggplot(data = majorconf2019, aes(x =wins , y = (five_year_avg_points), col = conference)) + 
+  geom_point(position = "jitter") +
+  stat_smooth(method = "lm", se = FALSE)
+```
+
+## Linear Regression
+
+Output for overall linear regression model, as well as breakout by conference
+
+```{r}
+simplemodel <-lm(wins ~ five_year_avg_points, data = majorconf2019)
+summ(simplemodel)
+
+#Breakout by conference
+
+simplemodelSEC <-lm(wins ~ five_year_avg_points, data = SEC)
+summ(simplemodelSEC)
+
+simplemodelACC <-lm(wins ~ five_year_avg_points, data = ACC)
+summ(simplemodelACC)
+
+simplemodelBigTen <-lm(wins ~ five_year_avg_points, data = BigTen)
+summ(simplemodelBigTen)
+
+simplemodelBig12 <-lm(wins ~ five_year_avg_points, data = Big12)
+summ(simplemodelBig12)
+
+simplemodelPac12 <-lm(wins ~ five_year_avg_points, data = Pac12)
+summ(simplemodelPac12)
+
+
+```
+
+
+
+
