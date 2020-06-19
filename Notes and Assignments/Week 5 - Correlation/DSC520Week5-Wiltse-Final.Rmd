@@ -1,0 +1,111 @@
+---
+title: "DSC 520 Week 5 Correlation Assignment"
+author: "Dan Wiltse"
+date: "Jan 12th 2020"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(ggm)
+
+# Get student survey data from url and load into a R data frame
+student_survey2 <- read.csv("http://content.bellevue.edu/cst/dsc/520/id/resources/student-survey.csv")
+```
+
+## Research Question
+
+"Is there a significant relationship between the amount of time spent reading and the time spent watching television?"
+
+
+## A. Use R to calculate the covariance of the Survey variables and provide an explanation of why you would use this calculation and what the results indicate.
+
+```{r}
+cov(student_survey2)
+```
+
+
+Covariance is a measure of how much two random variable vary together.  A large covariance can mean there is a strong 
+relationship between the variables.  You can't compare variances with data sets with different scales, as a strong 
+covariance in 1 data set may be weak in another data set, depending on the scales.  The larger the numbers, the 
+larger the covariance, so it tells us the variables are related, but doesn't tell us exactly how strong the 
+relationship between the two variables is.  
+
+## B. Examine the Survey data variables. What measurement is being used for the variables?  Explain what effect changing the measurement being used for the variables would have on the covariance calculation. Would this be a problem? Explain and provide a better alternative if needed.
+
+1)	TimeReading – Time Reading – Appears to be time in hours
+2)	TimeTV – Appears to be time in minutes
+3)	Happiness – Appears to be a rating scale, from 1-100
+4)	Gender – Appears to be a flag, with 1 being male and 0 being female (or vice versa)
+
+If you are not measuring the same units in the calculation (like hours vs minutes, or inches vs feet), then the units are arbitrary and the covariance may change based on the units compared. This would be a problem if you wanted to compare metrics with different units of measure. Correlation normalizes the differences by including the standard deviations of each metric, so it is dimensionless and gives you a coefficient between -1 and 1, and isn’t impacted by the changing in the scale or measurement of the included variables.
+
+
+## C. Choose the type of correlation test to perform, explain why you chose this test, and make a prediction if the test yields a positive or negative correlation?
+
+I will use  Pearson’s R correlation because the data is normally distributed and measured at interval ratio, which are the requirements of using Pearson’s R.  I predict there will be a negative correlation between time watching TV and time reading, and I also predict there will be a negative correlation between happiness and time spent reading. 
+
+## D. Perform a correlation analysis of:
+## 1)All variables
+
+```{r}
+cor(student_survey2)
+```
+
+## 2)A single correlation between two of the variables
+
+```{r}
+cor.test(student_survey2$TimeReading, student_survey2$TimeTV)
+```
+## 3) Repeat your correlation test in step 2 but set the confidence interval at 99%
+
+```{r}
+cor.test(student_survey2$TimeReading, student_survey2$TimeTV,  conf.level = 0.99)
+```
+## 4) Describe what the calculations in the correlation matrix suggest about the relationship between the variables. Be specific with your explanation.
+
+Time watching TV was significantly correlated with Time Reading, r = -.88, p <.01. 
+Time watching TV was significantly related to Happiness rating.
+Time  Reading was negatively related to Happiness rating.
+
+So while correlation doesn’t mean causation, the relationships between the variables tends to show that more time reading is correlated with less Time Watching TV, and more Time watching TV is positively correlated with Happiness Rating, while more time Reading is negatively correlated with Happiness rating.
+
+## E. Calculate the correlation coefficient and the coefficient of determination, describe what you conclude about the results.
+
+The correlation coefficient between time reading and happiness is -.434 and the correlation of determination is .189, which is the squared value of the correlation coefficient.  This shows that time reading is negatively correlated with happiness, and time reading accounts for 18.9% of the variation in happiness scores.  
+
+## F. Based on your analysis can you say that watching more TV caused students to read less? Explain.
+
+As the famous saying goes, correlation does not imply causation, but looking at the correlation data, it does show that time watching TV is highly negatively related to time reading, and the significance value shows that the likelihood of no relationship between the variables is very low. 
+
+## G.	Use TV Time and Happiness while controlling for Gender and perform a partial correlation. Explain how this changes your interpretation and explanation of the results.
+
+
+```{r}
+
+pc<-pcor(c("TimeTV", "Happiness", "Gender"), var(student_survey2))
+```
+```{r}
+ pc
+
+```
+```{r}
+ pc^2
+
+```
+```{r}
+pcor.test(pc,1,11) $pvalue
+
+```
+     
+
+
+The partial correlation between TV Time and Happiness, while controlling for Gender, was .6435.  This has a R squared value of .414, which means that TV time accounts for 41% of the happiness rating, when controlling for Gender.  This is very similar to the full correlation between TimeTV and Happiness variables without accounting for Gender.
+
+
